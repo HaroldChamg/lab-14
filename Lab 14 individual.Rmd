@@ -1,0 +1,95 @@
+---
+title: '1'
+output: word_document
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = False)
+```
+
+
+
+```{r}
+library(tidyverse)
+library(modelr)
+babies <- read_csv("https://raw.githubusercontent.com/ervance1/Sp2018-Data-Science-repo/master/babies2a.dat")
+babies <- rename(babies, bwtoz = `bwt/oz`) #renaming `bwt/oz` because the "/" sign requires special care
+babies<- na.omit(babies)
+babies
+```
+
+Team Part:
+
+```{r}
+babies2<-babies%>%
+  filter(gestation>225 & gestation<310)
+mod2 <- lm(bwtoz ~ gestation * smoke, data = babies)
+smoking<-babies2%>%
+  data_grid(gestation,smoke)%>%
+  gather_predictions(mod2)
+```
+
+
+
+```{r}
+ggplot(babies2, aes(gestation, bwtoz, colour = as.factor(smoke))) + 
+  geom_jitter() + 
+  geom_line(data = smoking, aes(y = pred))+
+  labs(title =" Smoking Decreases Babies' Birth Weight", x = "Gestation (Days)", y = "Birth Weight (oz)")+
+  scale_fill_discrete(name="Smoking Status", labels = c("Mother Doesn't Smoke", "Mother Does Smoke"))+
+  geom_smooth(method="lm", se=FALSE)+  
+  scale_color_manual(labels=c("Mother doesn't smoke", "Mother smokes"), values=c("darkblue", "red") )
+```
+
+
+
+This shows that for most gestation ages smoking decreases the birthweight, comfirming what the surgeon general warned about.
+
+
+```{r}
+babies3<-babies%>%
+  select( med, mage, parity)%>%
+  filter(med=="1"|med=="2"|med=="3"|med=="4"|med=="5")
+modb<-lm(parity~mage*med, data=babies3)
+age_v_ed<-babies3%>%
+  data_grid(mage,med)%>%
+  gather_predictions(modb)
+ggplot(babies3, aes(mage, parity, color = as.factor(med))) + 
+  geom_jitter() +
+  geom_line(data = age_v_ed, aes(y = pred),color="black")+
+  labs( x = "Mother's Age", y = "Number of Times Pregnant")+
+  theme(legend.title=element_blank())+
+  scale_color_manual(labels = c( "8th to 12th grade. Did not graduate high school","High school graduate, no other schooling", "High school graduate + trade school", "High school graduate + some college", "College graduate" ),values = c( "red", "green", "orange", "blue", "purple"))+
+  labs(title ="Number of Pregencies Goes Down as Education Increases", x = "Mother's Age", y = "Number of Times Pregnant")+
+  facet_wrap(~med)
+```
+
+
+Individual:
+
+How does dad's weight affect their baby's weight?(I know most people will only assume that a baby's weight is correlated to mom's weight. However, a lot of studies have proven that dad's weight can actually make impact on their baby's health condition.) So this research question is important because we will get to know why dad need to control his diet when his wife is pregnant. 
+```{r}
+new<-babies%>%
+  select(bwtoz,mpregwt,dwt)%>%
+new
+```
+
+```{r}
+mdb_1<-lm(bwtoz~mpregwt*dwt, data=new)
+weight_Com<-new%>%
+  data_grid(mpregwt,dwt)%>%
+  gather_predictions(mdb_1)
+
+```
+
+```{r}
+ggplot(new, aes(mpregwt,bwtoz)) + 
+  geom_point() +
+  geom_line(data = weight_Com, aes(y = pred),color="Blue")+
+  labs( x = "Mom's Weight", y = "Baby's weight in OZ")+
+  facet_wrap(~dwt)
+```
+
+Although, you might not see it very obvious. My finding is that dad's weight doesn't affect baby's until 190 pounds. After 190 pounds whenever dad's weight goes up, the baby's weight goes down(see 260 pounds for a more obvious trending line). In conclusion, dads can weighted pretty widely and won't make any influence on babay's weight until their weight get close to 190. So for dads, just don't be too fat, then the babies are gonna be fine lol.
+
+This time I used gather_prediction to predict babies weight based on their parents', which is what I have never done before. This new method is very cool, because it makes the outliars eliminated, which makes the prediction more reliable and trustworthy
