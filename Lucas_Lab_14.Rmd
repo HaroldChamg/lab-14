@@ -1,0 +1,59 @@
+---
+title: "Lucas_Lab_4"
+author: "Lucas Brack"
+date: "February 6, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(modelr)
+babies <- read_csv("https://raw.githubusercontent.com/ervance1/Sp2018-Data-Science-repo/master/babies2a.dat")
+babies <- rename(babies, bwtoz = `bwt/oz`) #renaming `bwt/oz` because the "/" sign requires special care
+babies<- na.omit(babies)
+view(babies)
+```
+
+#Team part question 2 plot
+```{r,warning= FALSE,message=FALSE}
+babies2<-babies%>%
+  filter(gestation>225 & gestation<310)
+mod2 <- lm(bwtoz ~ gestation * smoke, data = babies)
+smoking<-babies2%>%
+  data_grid(gestation,smoke)%>%
+  gather_predictions(mod2)
+
+ggplot(babies2, aes(gestation, bwtoz, colour = as.factor(smoke))) + 
+  geom_jitter() + 
+  geom_line(data = smoking, aes(y = pred))+
+  labs(title =" Smoking Decreases Babies' Birth Weight", x = "Gestation (Days)", y = "Birth Weight (oz)")+
+  scale_fill_discrete(name="Smoking Status", labels = c("Mother Doesn't Smoke", "Mother Does Smoke"))+
+  geom_smooth(method="lm", se=FALSE)+  
+  scale_color_manual(labels=c("Mother doesn't smoke", "Mother smokes"), values=c("darkblue", "red") )
+```
+This shows that for most gestation ages smoking decreases the birthweight, comfirming what the surgeon general warned about. 
+
+
+#Lucas Brack individual
+How does mothers's education and mother's age affect the number of pregnacies?
+```{r, fig.width=10,fig.height=5,warning= FALSE,message=FALSE}
+babies3<-babies%>%
+  select( med, mage, parity)%>%
+  filter(med=="1"|med=="2"|med=="3"|med=="4"|med=="5")
+modb<-lm(parity~mage*med, data=babies3)
+age_v_ed<-babies3%>%
+  data_grid(mage,med)%>%
+  gather_predictions(modb)
+ggplot(babies3, aes(mage, parity, color = as.factor(med))) + 
+  geom_jitter() +
+  geom_line(data = age_v_ed, aes(y = pred),color="black")+
+  labs( x = "Mother's Age", y = "Number of Times Pregnant")+
+  theme(legend.title=element_blank())+
+  scale_color_manual(labels = c( "8th to 12th grade. Did not graduate high school","High school graduate, no other schooling", "High school graduate + trade school", "High school graduate + some college", "College graduate" ),values = c( "red", "green", "orange", "blue", "purple"))+
+  labs(title ="Number of Pregencies Goes Down as Education Increases", x = "Mother's Age", y = "Number of Times Pregnant")+
+  facet_wrap(~med)
+```
+These graphs show that mothers with less education start having kids atleast 5 years earlier than those with a higher education, and have more kids. 
+
+For this lab, I redid the way I graphed the functions. Rather than just doing a scatter plot, I facet wrapped the data by education level. I also generated the linear models myself, trying out the 2 different methods, and decided that using the y~x1*x2 was the best method for me to use. I made the graphs look better, and filtered out the levels of education that did not have enough pieces of data to graph.
