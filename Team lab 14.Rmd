@@ -1,0 +1,360 @@
+---
+title: "Team lab 14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = False)
+```
+
+Harold
+
+
+```{r}
+library(tidyverse)
+library(modelr)
+babies <- read_csv("https://raw.githubusercontent.com/ervance1/Sp2018-Data-Science-repo/master/babies2a.dat")
+babies <- rename(babies, bwtoz = `bwt/oz`) #renaming `bwt/oz` because the "/" sign requires special care
+babies<- na.omit(babies)
+babies
+```
+
+Team Part: Made by Lucas
+
+```{r}
+babies2<-babies%>%
+  filter(gestation>225 & gestation<310)
+mod2 <- lm(bwtoz ~ gestation * smoke, data = babies)
+smoking<-babies2%>%
+  data_grid(gestation,smoke)%>%
+  gather_predictions(mod2)
+```
+
+
+
+```{r}
+ggplot(babies2, aes(gestation, bwtoz, colour = as.factor(smoke))) + 
+  geom_jitter() + 
+  geom_line(data = smoking, aes(y = pred))+
+  labs(title =" Smoking Decreases Babies' Birth Weight", x = "Gestation (Days)", y = "Birth Weight (oz)")+
+  scale_fill_discrete(name="Smoking Status", labels = c("Mother Doesn't Smoke", "Mother Does Smoke"))+
+  geom_smooth(method="lm", se=FALSE)+  
+  scale_color_manual(labels=c("Mother doesn't smoke", "Mother smokes"), values=c("darkblue", "red") )
+```
+
+
+
+This shows that for most gestation ages smoking decreases the birthweight, comfirming what the surgeon general warned about.
+
+
+```{r}
+babies3<-babies%>%
+  select( med, mage, parity)%>%
+  filter(med=="1"|med=="2"|med=="3"|med=="4"|med=="5")
+modb<-lm(parity~mage*med, data=babies3)
+age_v_ed<-babies3%>%
+  data_grid(mage,med)%>%
+  gather_predictions(modb)
+ggplot(babies3, aes(mage, parity, color = as.factor(med))) + 
+  geom_jitter() +
+  geom_line(data = age_v_ed, aes(y = pred),color="black")+
+  labs( x = "Mother's Age", y = "Number of Times Pregnant")+
+  theme(legend.title=element_blank())+
+  scale_color_manual(labels = c( "8th to 12th grade. Did not graduate high school","High school graduate, no other schooling", "High school graduate + trade school", "High school graduate + some college", "College graduate" ),values = c( "red", "green", "orange", "blue", "purple"))+
+  labs(title ="Number of Pregencies Goes Down as Education Increases", x = "Mother's Age", y = "Number of Times Pregnant")+
+  facet_wrap(~med)
+```
+
+
+Individual:
+
+How does dad's weight affect their baby's weight?(I know most people will only assume that a baby's weight is correlated to mom's weight. However, a lot of studies have proven that dad's weight can actually make impact on their baby's health condition.) So this research question is important because we will get to know why dad need to control his diet when his wife is pregnant. 
+```{r}
+new<-babies%>%
+  select(bwtoz,mpregwt,dwt)%>%
+new
+```
+
+```{r}
+mdb_1<-lm(bwtoz~mpregwt*dwt, data=new)
+weight_Com<-new%>%
+  data_grid(mpregwt,dwt)%>%
+  gather_predictions(mdb_1)
+```
+
+```{r}
+ggplot(new, aes(mpregwt,bwtoz)) + 
+  geom_point() +
+  geom_line(data = weight_Com, aes(y = pred),color="Blue")+
+  labs( x = "Mom's Weight", y = "Baby's weight in OZ")+
+  facet_wrap(~dwt)
+```
+
+Although, you might not see it very obvious. My finding is that dad's weight doesn't affect baby's until 190 pounds. After 190 pounds whenever dad's weight goes up, the baby's weight goes down(see 260 pounds for a more obvious trending line). In conclusion, dads can weighted pretty widely and won't make any influence on babay's weight until their weight get close to 190. So for dads, just don't be too fat, then the babies are gonna be fine lol.
+
+This time I used gather_prediction to predict babies weight based on their parents', which is what I have never done before. This new method is very cool, because it makes the outliars eliminated, which makes the prediction more reliable and trustworthy
+
+
+Jon
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+babies <- read_csv("https://raw.githubusercontent.com/ervance1/Sp2018-Data-Science-repo/master/babies2a.dat")
+babies <- rename(babies, bwtoz = `bwt/oz`)
+babies <- na.omit(babies)
+```
+
+
+*** 
+
+**Overall Questions, and why their important:**
+
+Analysis of Premature Births:
+The answer to this question is quite important, as premature births can have several health implications.  By answering this question, the surgeon general can warn mothers about the implications of smoking beside their own health.
+
+
+Analysis of birth Weights at gestational ages:
+The reason this question is important is similar to above, as lower birth weights can have serioues implications on birth and it's health.  By answering this question, the surgeon general can give accurate warning to smoking mother's on its consequences
+
+***
+
+**Gestational age and Weight:**
+```{r}
+ggplot(data=babies, aes(x=gestation, y=bwtoz, fill=as.factor(smoke)))+
+  geom_boxplot()+
+  labs(title =" Smoking decreases Babies' Birth Weight", x = "Gestation (Days)", y = "Birth Weight (oz)")+
+  scale_fill_discrete(name="", labels = c("Mother Doesn't Smoke", "Mother Does Smoke"))
+```
+
+From this plot we can clearly see the median weight for non-smoking mothers is higher than those who smoke.  Therefore we conclude the evidence supports the surgeon general's second assertion.
+
+***
+
+**Smoking and Premature Births**
+```{r}
+ggplot(data = babies) +
+  geom_jitter(mapping = aes(x = smoke, y = Premature, color = as.factor(number))) +
+  scale_color_discrete(name = "Cigs smoked daily, intervals of 5") +
+  xlab("Smoke, Y or N") +
+  ylab("Premature, Y or N")
+```
+
+
+From this plot, we can see that there is a significant number of babies born non-prematurely even with mother's who smoke, and it is difficult to tell if the number is truly greater.  Creating  a simple matrix can help this data become less abscure.
+```{r}
+with(babies,table(smoke,Premature))
+```
+
+
+
+As you can see, the number of premature babies increases by just 4 with smoking numbers, so this relationship is weak at best.  Therefore, we conclude that the surgeon general's first assertion is correct, but not as strong as it may seem.
+
+***
+
+ **Recommendation:**
+ It is recommended from our team that mother's should not smoke, as the data clearly supports negative effects in pregnancy to the child.
+ 
+***
+
+**Preliminary Question:**
+
+There is a few variables in which the data between smokers and non-smokers is different, here are their plots.
+```{r}
+ggplot(data = babies) +
+  geom_bar(mapping = aes(x = bwtoz, fill = as.factor(smoke))) +
+  facet_grid(.~smoke)
+```
+
+
+
+The Birthweight of babies who smoke is significantly less, not just in gestation. Besides this plot, we found the other variables are all extremely similar for families, smoking or not, all the distributions are fairly similar.
+
+***
+
+***
+
+Jon Guay:
+
+
+Does Father's Education level have a significant impact on Income for the family?  Furthermore, does father's education impact marriage status for women?
+
+Findings:
+After plotting this data, I first found that the overwhelming majority of families in this study were not seperated.  Furthermore, the Father's education was very weakly positively correlated with the family's income, at just .19, Therefore it is safe to assume fathers in this study certainely didn't account for the entire income.
+New portion: I will conduct a permutation test to determine if a fathers education and family income are at all related.
+Null Hypothesis: the difference between means = 0(IE are the two correlated)
+
+
+```{r, results='hide',warning=F, message=FALSE}
+perm_mean <- function(perms = 1000, values, n1)
+{
+  ## Variables ##
+  # perms: The number of permutations 
+  # values (num): 
+  # n1 (int): Size of group 1
+  ###############
+  
+  # Step 1:
+  # Create vector of zeroes of length "perms" to store
+  # Permuted mean difference 
+  zerovector = numeric(1000)
+  
+  # Loop throught number of permutations
+  for (i in c(1:perms))
+  {
+    # Step 2:
+    # Randomly separate vector "values" into disjoint 
+    # groups of size "n1" and "length(values) - n1" respectively
+    test <- sample(values, length(values), replace = F)
+    group1 <- test[1:n1]
+    group2 <- test[1 + n1:length(values) -1 ]
+    # Step 3:
+    # Compute the sample means for the two groups from 
+    Meangroup1 <- mean(group1)
+    Meangroup2 <- mean(group2)
+    # Step 4: 
+    # Compute the difference in sample means, store the
+    # value in the vector from step 1
+    difference <- (Meangroup2 - Meangroup1)
+    zerovector[i] = difference
+  }
+  
+  # Step 5:
+  # Return new updated vector, created in step 1
+  return(zerovector)
+}
+babies <- babies %>%
+  select('ded','inc')
+data <- perm_mean(1000, babies$ded, 250)
+data1 <- enframe(data)
+ggplot(data = data1) +
+  geom_histogram(mapping = aes(x = value))
+```
+
+From this data, we see my interpretation in lab 4 was incorrect, as it is clear the two are not similar at all, as given by our hypothesis testing.  Simply looking at the x-axis and its values lets us know that the null hypothesis is accepted.
+
+
+```{r}
+ggplot(data = babies) +
+  geom_col(mapping = aes(x = ded, y = inc, fill = as.factor(marital))) +
+  scale_fill_discrete(name = "Marriage Status", labels = c("NA","married","legally seperated","divorced","widowed","never married")) +
+  facet_grid(.~marital) +
+  xlab("Fathers Education") +
+  ylab("Income per Family")
+```
+
+
+
+What I did:
+I, Jon Guay, created a plot showing the relationship between father's education and income per family.  The data showed that there was a very weak positive correlation.  I used a geom_Col plot, as one of my varaibles as one was continous, and the other was discrete. I used a facet grid to organize this data into marital status, labeled both axes, and used a fill along with marital status to clearly depict the data.
+
+***
+
+**Who Did What:**
+* Jon Guay merged the entire team report, answered the key questions, plotted one of them, and answered the subsequent questions as well as created the plot.  Made his individual section
+* Lucas Brack plotted the other key plot, as well as his individual work
+* Max Ward created his individual plot
+* Harold Chang created his individual plot
+The team used several non-defaults, such as facet_wrap, facet_grid, labels, legends, titles, and 5 different geom plots, including col, stat, point, smooth, and bar.
+
+
+Lucas
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(modelr)
+babies <- read_csv("https://raw.githubusercontent.com/ervance1/Sp2018-Data-Science-repo/master/babies2a.dat")
+babies <- rename(babies, bwtoz = `bwt/oz`) #renaming `bwt/oz` because the "/" sign requires special care
+babies<- na.omit(babies)
+view(babies)
+```
+
+#Team part question 2 plot
+```{r,warning= FALSE,message=FALSE}
+babies2<-babies%>%
+  filter(gestation>225 & gestation<310)
+mod2 <- lm(bwtoz ~ gestation * smoke, data = babies)
+smoking<-babies2%>%
+  data_grid(gestation,smoke)%>%
+  gather_predictions(mod2)
+ggplot(babies2, aes(gestation, bwtoz, colour = as.factor(smoke))) + 
+  geom_jitter() + 
+  geom_line(data = smoking, aes(y = pred))+
+  labs(title =" Smoking Decreases Babies' Birth Weight", x = "Gestation (Days)", y = "Birth Weight (oz)")+
+  scale_fill_discrete(name="Smoking Status", labels = c("Mother Doesn't Smoke", "Mother Does Smoke"))+
+  geom_smooth(method="lm", se=FALSE)+  
+  scale_color_manual(labels=c("Mother doesn't smoke", "Mother smokes"), values=c("darkblue", "red") )
+```
+This shows that for most gestation ages smoking decreases the birthweight, comfirming what the surgeon general warned about. 
+
+
+#Lucas Brack individual
+How does mothers's education and mother's age affect the number of pregnacies?
+```{r, fig.width=10,fig.height=5,warning= FALSE,message=FALSE}
+babies3<-babies%>%
+  select( med, mage, parity)%>%
+  filter(med=="1"|med=="2"|med=="3"|med=="4"|med=="5")
+modb<-lm(parity~mage*med, data=babies3)
+age_v_ed<-babies3%>%
+  data_grid(mage,med)%>%
+  gather_predictions(modb)
+ggplot(babies3, aes(mage, parity, color = as.factor(med))) + 
+  geom_jitter() +
+  geom_line(data = age_v_ed, aes(y = pred),color="black")+
+  labs( x = "Mother's Age", y = "Number of Times Pregnant")+
+  theme(legend.title=element_blank())+
+  scale_color_manual(labels = c( "8th to 12th grade. Did not graduate high school","High school graduate, no other schooling", "High school graduate + trade school", "High school graduate + some college", "College graduate" ),values = c( "red", "green", "orange", "blue", "purple"))+
+  labs(title ="Number of Pregencies Goes Down as Education Increases", x = "Mother's Age", y = "Number of Times Pregnant")+
+  facet_wrap(~med)
+```
+These graphs show that mothers with less education start having kids atleast 5 years earlier than those with a higher education, and have more kids. 
+
+For this lab, I redid the way I graphed the functions. Rather than just doing a scatter plot, I facet wrapped the data by education level. I also generated the linear models myself, trying out the 2 different methods, and decided that using the y~x1*x2 was the best method for me to use. I made the graphs look better, and filtered out the levels of education that did not have enough pieces of data to graph.
+
+
+Max
+---
+title: "Lab 4"
+#Max Ward
+output: html_document
+---
+
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+babies <- read_csv("https://raw.githubusercontent.com/ervance1/Sp2018-Data-Science-repo/master/babies2a.dat")
+babies <- rename(babies, bwtoz = `bwt/oz`)
+babies <- na.omit(babies)
+```
+#Max
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+babies$mrace[babies$mrace == 1] <- 0
+babies$mrace[babies$mrace == 2] <- 0
+babies$mrace[babies$mrace == 3] <- 0
+babies$mrace[babies$mrace == 4] <- 0
+babies$mrace[babies$mrace == 5] <- 0
+view(babies)
+```
+Quetion: Does the mothers race and or gestation effect the birth weight of the baby?
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+ggplot(data = babies, aes(x = gestation, y = bwtoz , color= as.factor(mrace))) +
+  geom_point()+
+  facet_wrap(~mrace)+
+  geom_smooth(method = "lm", se= FALSE)+
+  scale_color_manual(labels = c("White", "Mexican", "Black", "Asian", "Mix", "Unknown"), values = c("white", "blue", "yellow", "pink", "green", "red"))
+```
+
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+fit_1  <- lm(bwtoz ~ gestation, data = babies)
+summary(fit_1)
+```
+As we can see from the data the p-value is small so we can deterime the data is significant and it did not just happen by chance. 
+```{r}
+plot(bwtoz ~ gestation, data = babies, col = "blue")
+abline(fit_1)
+```
+
+Answer: Based on the smaller graphs it does look like the race of the mom has an effect on the babies birth weight. As you can see some of the lines are much steeper than the others. For the gestation for all the races it looks like as the gestation is longer the baby is higher.
+
+What I ddi:I graphed my data in a much easier way to read and I used the p-value to test if the data was significant. I also added a third variable to comapare all the data.
