@@ -18,7 +18,7 @@ babies<- na.omit(babies)
 babies
 ```
 
-Team Part:
+Team Part: Made by Lucas
 
 ```{r}
 babies2<-babies%>%
