@@ -1,0 +1,171 @@
+---
+title: "Lab 4, Team Pink Lemonade"
+author: "Jon Guay, Harold Change, Lucas Brack, Max Ward"
+date: "February 7, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+babies <- read_csv("https://raw.githubusercontent.com/ervance1/Sp2018-Data-Science-repo/master/babies2a.dat")
+babies <- rename(babies, bwtoz = `bwt/oz`)
+babies <- na.omit(babies)
+```
+
+
+*** 
+
+**Overall Questions, and why their important:**
+
+Analysis of Premature Births:
+The answer to this question is quite important, as premature births can have several health implications.  By answering this question, the surgeon general can warn mothers about the implications of smoking beside their own health.
+
+
+Analysis of birth Weights at gestational ages:
+The reason this question is important is similar to above, as lower birth weights can have serioues implications on birth and it's health.  By answering this question, the surgeon general can give accurate warning to smoking mother's on its consequences
+
+***
+
+**Gestational age and Weight:**
+```{r}
+ggplot(data=babies, aes(x=gestation, y=bwtoz, fill=as.factor(smoke)))+
+  geom_boxplot()+
+  labs(title =" Smoking decreases Babies' Birth Weight", x = "Gestation (Days)", y = "Birth Weight (oz)")+
+  scale_fill_discrete(name="", labels = c("Mother Doesn't Smoke", "Mother Does Smoke"))
+```
+
+From this plot we can clearly see the median weight for non-smoking mothers is higher than those who smoke.  Therefore we conclude the evidence supports the surgeon general's second assertion.
+
+***
+
+**Smoking and Premature Births**
+```{r}
+ggplot(data = babies) +
+  geom_jitter(mapping = aes(x = smoke, y = Premature, color = as.factor(number))) +
+  scale_color_discrete(name = "Cigs smoked daily, intervals of 5") +
+  xlab("Smoke, Y or N") +
+  ylab("Premature, Y or N")
+```
+
+
+From this plot, we can see that there is a significant number of babies born non-prematurely even with mother's who smoke, and it is difficult to tell if the number is truly greater.  Creating  a simple matrix can help this data become less abscure.
+```{r}
+with(babies,table(smoke,Premature))
+```
+
+
+
+As you can see, the number of premature babies increases by just 4 with smoking numbers, so this relationship is weak at best.  Therefore, we conclude that the surgeon general's first assertion is correct, but not as strong as it may seem.
+
+***
+
+ **Recommendation:**
+ It is recommended from our team that mother's should not smoke, as the data clearly supports negative effects in pregnancy to the child.
+ 
+***
+
+**Preliminary Question:**
+
+There is a few variables in which the data between smokers and non-smokers is different, here are their plots.
+```{r}
+ggplot(data = babies) +
+  geom_bar(mapping = aes(x = bwtoz, fill = as.factor(smoke))) +
+  facet_grid(.~smoke)
+```
+
+
+
+The Birthweight of babies who smoke is significantly less, not just in gestation. Besides this plot, we found the other variables are all extremely similar for families, smoking or not, all the distributions are fairly similar.
+
+***
+
+***
+
+Jon Guay:
+
+
+Does Father's Education level have a significant impact on Income for the family?  Furthermore, does father's education impact marriage status for women?
+
+Findings:
+After plotting this data, I first found that the overwhelming majority of families in this study were not seperated.  Furthermore, the Father's education was very weakly positively correlated with the family's income, at just .19, Therefore it is safe to assume fathers in this study certainely didn't account for the entire income.
+New portion: I will conduct a permutation test to determine if a fathers education and family income are at all related.
+Null Hypothesis: the difference between means = 0(IE are the two correlated)
+
+
+```{r, results='hide',warning=F, message=FALSE}
+perm_mean <- function(perms = 1000, values, n1)
+{
+  ## Variables ##
+  # perms: The number of permutations 
+  # values (num): 
+  # n1 (int): Size of group 1
+  ###############
+  
+  # Step 1:
+  # Create vector of zeroes of length "perms" to store
+  # Permuted mean difference 
+  zerovector = numeric(1000)
+  
+  # Loop throught number of permutations
+  for (i in c(1:perms))
+  {
+    # Step 2:
+    # Randomly separate vector "values" into disjoint 
+    # groups of size "n1" and "length(values) - n1" respectively
+    test <- sample(values, length(values), replace = F)
+    group1 <- test[1:n1]
+    group2 <- test[1 + n1:length(values) -1 ]
+    # Step 3:
+    # Compute the sample means for the two groups from 
+    Meangroup1 <- mean(group1)
+    Meangroup2 <- mean(group2)
+    # Step 4: 
+    # Compute the difference in sample means, store the
+    # value in the vector from step 1
+    difference <- (Meangroup2 - Meangroup1)
+    zerovector[i] = difference
+  }
+  
+  # Step 5:
+  # Return new updated vector, created in step 1
+  return(zerovector)
+}
+babies <- babies %>%
+  select('ded','inc')
+
+
+data <- perm_mean(1000, babies$ded, 250)
+data1 <- enframe(data)
+ggplot(data = data1) +
+  geom_histogram(mapping = aes(x = value))
+```
+
+From this data, we see my interpretation in lab 4 was incorrect, as it is clear the two are not similar at all, as given by our hypothesis testing.  Simply looking at the x-axis and its values lets us know that the null hypothesis is accepted.
+
+
+```{r}
+ggplot(data = babies) +
+  geom_col(mapping = aes(x = ded, y = inc, fill = as.factor(marital))) +
+  scale_fill_discrete(name = "Marriage Status", labels = c("NA","married","legally seperated","divorced","widowed","never married")) +
+  facet_grid(.~marital) +
+  xlab("Fathers Education") +
+  ylab("Income per Family")
+
+```
+
+
+
+What I did:
+I, Jon Guay, created a plot showing the relationship between father's education and income per family.  The data showed that there was a very weak positive correlation.  I used a geom_Col plot, as one of my varaibles as one was continous, and the other was discrete. I used a facet grid to organize this data into marital status, labeled both axes, and used a fill along with marital status to clearly depict the data.
+
+***
+
+**Who Did What:**
+* Jon Guay merged the entire team report, answered the key questions, plotted one of them, and answered the subsequent questions as well as created the plot.  Made his individual section
+* Lucas Brack plotted the other key plot, as well as his individual work
+* Max Ward created his individual plot
+* Harold Chang created his individual plot
+The team used several non-defaults, such as facet_wrap, facet_grid, labels, legends, titles, and 5 different geom plots, including col, stat, point, smooth, and bar.
+
+
